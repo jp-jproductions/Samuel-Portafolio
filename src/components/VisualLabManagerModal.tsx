@@ -238,7 +238,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 select-none">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -270,10 +270,10 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 15 }}
           transition={{ duration: 0.3 }}
-          className="relative z-10 w-full max-w-5xl max-h-[92vh] bg-surface border border-stroke rounded-3xl overflow-hidden flex flex-col shadow-2xl"
+          className="relative z-10 w-full max-w-5xl h-[92vh] max-h-[92vh] bg-surface border border-stroke rounded-3xl overflow-hidden flex flex-col shadow-2xl my-auto"
         >
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-stroke/70 bg-surface/95 backdrop-blur-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-stroke/70 bg-surface/95 backdrop-blur-md shrink-0">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#89AACC] animate-pulse" />
@@ -294,6 +294,23 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
 
             {/* Actions Bar */}
             <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+              {/* Direct Add Photo Button in Header */}
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('photos');
+                  setShowAddForm(true);
+                  setTimeout(() => {
+                    document.getElementById('add-photo-form')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 120);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#89AACC] border border-[#89AACC]/40 bg-[#89AACC]/15 hover:bg-[#89AACC]/25 transition-colors cursor-pointer shadow-sm"
+                title="Agregar una nueva foto al Laboratorio Visual"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Subir Foto</span>
+              </button>
+
               {/* Preview Public Gallery */}
               {onOpenPublicGallery && (
                 <button
@@ -353,7 +370,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-2 px-6 pt-3 pb-2 border-b border-stroke/50 bg-bg/40">
+          <div className="flex items-center gap-2 px-6 pt-3 pb-2 border-b border-stroke/50 bg-bg/40 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab('photos')}
@@ -382,7 +399,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
           </div>
 
           {/* Tab Content Body */}
-          <div className="flex-1 overflow-y-auto p-5 sm:p-6 custom-scrollbar">
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 overscroll-contain scrollbar-thin scrollbar-thumb-[#89AACC]/40 hover:scrollbar-thumb-[#89AACC]/70 scrollbar-track-black/40">
             {activeTab === 'photos' ? (
               <div className="space-y-6">
                 {/* Parallax Info Banner */}
@@ -399,7 +416,15 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setShowAddForm(!showAddForm)}
+                    onClick={() => {
+                      const next = !showAddForm;
+                      setShowAddForm(next);
+                      if (next) {
+                        setTimeout(() => {
+                          document.getElementById('add-photo-form')?.scrollIntoView({ behavior: 'smooth' });
+                        }, 120);
+                      }
+                    }}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-white accent-gradient hover:opacity-90 transition-opacity cursor-pointer shrink-0"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -411,11 +436,12 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                 <AnimatePresence>
                   {showAddForm && (
                     <motion.form
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
+                      id="add-photo-form"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
                       onSubmit={handleCreateExploration}
-                      className="p-5 rounded-2xl bg-bg border border-[#89AACC]/30 space-y-4 overflow-hidden"
+                      className="p-5 sm:p-6 rounded-2xl bg-bg border border-[#89AACC]/40 space-y-4 shadow-xl"
                     >
                       <div className="flex items-center justify-between border-b border-stroke pb-3">
                         <div className="flex items-center gap-2">
@@ -424,10 +450,30 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                             Subir Nueva Foto al Laboratorio Visual
                           </h4>
                         </div>
-                        <span className="text-[11px] text-muted">Aparecerá en la posición #01</span>
+                        <span className="text-[11px] text-[#89AACC] font-medium bg-[#89AACC]/15 px-2.5 py-0.5 rounded-full border border-[#89AACC]/30">
+                          Aparecerá en la posición #01
+                        </span>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Big Clickable Upload Dropzone */}
+                      <div
+                        onClick={() => addFileInputRef.current?.click()}
+                        className="border-2 border-dashed border-[#89AACC]/50 hover:border-[#89AACC] rounded-2xl p-6 text-center cursor-pointer bg-surface/60 hover:bg-[#89AACC]/10 transition-all flex flex-col items-center justify-center gap-2.5 group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-[#89AACC]/15 border border-[#89AACC]/30 flex items-center justify-center text-[#89AACC] group-hover:scale-110 transition-transform shadow-md">
+                          <Upload className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-semibold text-white block">
+                            {isUploading ? 'Subiendo archivo...' : 'Haz clic aquí para seleccionar y subir tu foto (.JPEG, .PNG, .WEBP) o video'}
+                          </span>
+                          <span className="text-[11px] text-muted">
+                            Formatos soportados: JPG, PNG, WEBP, MOV, MP4
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                         {/* Title */}
                         <div>
                           <label className="block text-[11px] uppercase tracking-wider text-muted mb-1 font-medium">
@@ -439,7 +485,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                             onChange={(e) => setNewTitle(e.target.value)}
                             placeholder="Ej. Render Bólido GT 2026..."
                             required
-                            className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                            className="w-full bg-surface border border-stroke rounded-xl px-3.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
                           />
                         </div>
 
@@ -453,7 +499,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                             value={newMedium}
                             onChange={(e) => setNewMedium(e.target.value)}
                             placeholder="Ej. Bocetos & CGI Automotriz..."
-                            className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                            className="w-full bg-surface border border-stroke rounded-xl px-3.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
                           />
                         </div>
 
@@ -465,7 +511,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                           <select
                             value={newCategory}
                             onChange={(e) => setNewCategory(e.target.value)}
-                            className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                            className="w-full bg-surface border border-stroke rounded-xl px-3.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
                           >
                             <option value="Automotriz">Automotriz</option>
                             <option value="Fotografía & Viajes">Fotografía &amp; Viajes</option>
@@ -485,7 +531,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                               value={newYear}
                               onChange={(e) => setNewYear(e.target.value)}
                               placeholder="2026"
-                              className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                              className="w-full bg-surface border border-stroke rounded-xl px-3.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
                             />
                           </div>
 
@@ -496,7 +542,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                             <select
                               value={newRotation}
                               onChange={(e) => setNewRotation(e.target.value)}
-                              className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                              className="w-full bg-surface border border-stroke rounded-xl px-3.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
                             >
                               <option value="rotate-0">Recto (0°)</option>
                               <option value="-rotate-1">Inclinado Izquierda (-1°)</option>
@@ -507,40 +553,40 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                           </div>
                         </div>
 
-                        {/* Image URL or Upload */}
+                        {/* Direct URL Input */}
                         <div className="md:col-span-2">
                           <label className="block text-[11px] uppercase tracking-wider text-muted mb-1 font-medium">
-                            Imagen o Fotografía *
+                            Enlace o Archivo de la Imagen *
                           </label>
                           <div className="flex gap-2">
                             <input
                               type="text"
                               value={newImageUrl}
                               onChange={(e) => setNewImageUrl(e.target.value)}
-                              placeholder="https://images.unsplash.com/... o sube un archivo local"
+                              placeholder="https://images.unsplash.com/... o usa el botón de subir"
                               required
-                              className="flex-1 bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                              className="flex-1 bg-surface border border-stroke rounded-xl px-3.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
                             />
                             <button
                               type="button"
                               onClick={() => addFileInputRef.current?.click()}
                               disabled={isUploading}
-                              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border border-stroke bg-surface hover:bg-white/10 text-white transition-colors cursor-pointer shrink-0"
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium border border-stroke bg-surface hover:bg-white/10 text-white transition-colors cursor-pointer shrink-0"
                             >
                               <Upload className="w-3.5 h-3.5 text-[#89AACC]" />
-                              <span>{isUploading ? 'Subiendo...' : 'Subir Archivo'}</span>
+                              <span>{isUploading ? 'Subiendo...' : 'Seleccionar Archivo'}</span>
                             </button>
                           </div>
                           {newImageUrl && (
-                            <div className="mt-2.5 flex items-center gap-3 p-2 rounded-xl bg-surface/60 border border-stroke/60">
+                            <div className="mt-2.5 flex items-center gap-3 p-2.5 rounded-xl bg-surface/60 border border-stroke/60">
                               <img
                                 src={newImageUrl}
                                 alt="Previsualización"
-                                className="w-12 h-12 object-cover rounded-lg border border-stroke shrink-0"
+                                className="w-14 h-14 object-cover rounded-lg border border-stroke shrink-0"
                               />
                               <div className="text-[11px] text-muted overflow-hidden text-ellipsis whitespace-nowrap flex-1">
-                                <span className="text-white font-medium block">Previsualización de imagen cargada</span>
-                                {newImageUrl.startsWith('blob:') ? 'Archivo local en memoria' : newImageUrl}
+                                <span className="text-white font-medium block">Imagen lista para agregar</span>
+                                <span className="text-[10px] text-emerald-400">✓ Archivo cargado correctamente</span>
                               </div>
                             </div>
                           )}
@@ -556,12 +602,12 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                             onChange={(e) => setNewDescription(e.target.value)}
                             placeholder="Detalles del proceso creativo, render o captura..."
                             rows={2}
-                            className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                            className="w-full bg-surface border border-stroke rounded-xl p-3 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
                           />
                         </div>
                       </div>
 
-                      <div className="flex justify-end gap-2 pt-2">
+                      <div className="flex justify-end gap-2 pt-3 border-t border-stroke/60">
                         <button
                           type="button"
                           onClick={() => setShowAddForm(false)}
@@ -571,7 +617,7 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
                         </button>
                         <button
                           type="submit"
-                          className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-semibold text-white accent-gradient hover:opacity-90 transition-opacity cursor-pointer shadow-sm"
+                          className="flex items-center gap-1.5 px-6 py-2.5 rounded-xl text-xs font-semibold text-white accent-gradient hover:opacity-90 transition-opacity cursor-pointer shadow-md"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Agregar a la Galería</span>

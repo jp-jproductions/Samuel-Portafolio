@@ -229,7 +229,7 @@ export const HeroVideoModal: React.FC<HeroVideoModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-8 select-none">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -245,7 +245,7 @@ export const HeroVideoModal: React.FC<HeroVideoModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 20 }}
           transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative z-10 w-full max-w-5xl max-h-[92vh] bg-surface border border-stroke rounded-3xl overflow-hidden flex flex-col shadow-2xl"
+          className="relative z-10 w-full max-w-5xl h-[92vh] max-h-[92vh] bg-surface border border-stroke rounded-3xl overflow-hidden flex flex-col shadow-2xl my-auto"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-stroke/70 bg-surface/90 shrink-0">
@@ -342,7 +342,7 @@ export const HeroVideoModal: React.FC<HeroVideoModalProps> = ({
           </div>
 
           {/* Modal Body */}
-          <div className="overflow-y-auto p-5 sm:p-8 flex-1 space-y-6">
+          <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-8 space-y-6 overscroll-contain scrollbar-thin scrollbar-thumb-[#89AACC]/40 hover:scrollbar-thumb-[#89AACC]/70 scrollbar-track-black/40">
             {/* TAB 1: TEXTOS DEL INICIO */}
             {activeTab === 'texts' && (
               <div className="space-y-6 max-w-3xl mx-auto">

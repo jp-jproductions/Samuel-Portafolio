@@ -178,7 +178,7 @@ export const ExplorationsGalleryModal: React.FC<ExplorationsGalleryModalProps> =
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 select-none">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 select-none overflow-hidden">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -197,7 +197,7 @@ export const ExplorationsGalleryModal: React.FC<ExplorationsGalleryModalProps> =
           className="relative z-10 w-full max-w-6xl max-h-[92vh] bg-surface border border-stroke rounded-3xl overflow-hidden flex flex-col shadow-2xl"
         >
           {/* Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-stroke/70 bg-surface/95 backdrop-blur-md">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-stroke/70 bg-surface/95 backdrop-blur-md shrink-0">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="w-2 h-2 rounded-full accent-gradient animate-pulse" />
@@ -249,7 +249,15 @@ export const ExplorationsGalleryModal: React.FC<ExplorationsGalleryModalProps> =
               {isAdmin && (
                 <button
                   type="button"
-                  onClick={() => setShowAddForm(!showAddForm)}
+                  onClick={() => {
+                    const next = !showAddForm;
+                    setShowAddForm(next);
+                    if (next) {
+                      setTimeout(() => {
+                        document.getElementById('add-photo-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
+                    }
+                  }}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium text-white accent-gradient hover:opacity-90 transition-opacity cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -285,159 +293,8 @@ export const ExplorationsGalleryModal: React.FC<ExplorationsGalleryModalProps> =
             </div>
           </div>
 
-          {/* Admin Upload / Add Exploration Drawer */}
-          <AnimatePresence>
-            {isAdmin && showAddForm && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="border-b border-stroke/80 bg-bg/95 p-5 overflow-hidden"
-              >
-                <form onSubmit={handleAddExploration} className="max-w-4xl mx-auto space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#89AACC] uppercase tracking-wider flex items-center gap-2">
-                      <Camera className="w-4 h-4" />
-                      Agregar Nueva Foto al Laboratorio Visual
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddForm(false)}
-                      className="text-xs text-muted hover:text-white"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[11px] text-muted uppercase tracking-wider mb-1">
-                        Título de la foto *
-                      </label>
-                      <input
-                        type="text"
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        placeholder="Ej. Estudio de Alerón GT"
-                        className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] text-muted uppercase tracking-wider mb-1">
-                        Técnica / Medio
-                      </label>
-                      <input
-                        type="text"
-                        value={newMedium}
-                        onChange={(e) => setNewMedium(e.target.value)}
-                        placeholder="Ej. Render 3D & Fotografía"
-                        className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-[11px] text-muted uppercase tracking-wider mb-1">
-                          Categoría
-                        </label>
-                        <select
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          className="w-full bg-surface border border-stroke rounded-xl px-2.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
-                        >
-                          <option value="Automotriz">Automotriz</option>
-                          <option value="Fotografía & Viajes">Fotografía & Viajes</option>
-                          <option value="Branding & EAFIT">Branding & EAFIT</option>
-                          <option value="3D & Experimentos">3D & Experimentos</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-muted uppercase tracking-wider mb-1">
-                          Año
-                        </label>
-                        <input
-                          type="text"
-                          value={newYear}
-                          onChange={(e) => setNewYear(e.target.value)}
-                          placeholder="2026"
-                          className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] text-muted uppercase tracking-wider mb-1">
-                      Descripción breve
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={newDescription}
-                      onChange={(e) => setNewDescription(e.target.value)}
-                      placeholder="Explica el contexto visual, detalles técnicos o anécdota..."
-                      className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC] resize-none"
-                    />
-                  </div>
-
-                  {/* Image source: File upload or URL */}
-                  <div className="flex flex-col sm:flex-row items-center gap-3">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,video/quicktime,video/mp4"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-stroke bg-surface hover:bg-stroke/60 text-xs text-text-primary transition-colors cursor-pointer"
-                    >
-                      <Upload className="w-3.5 h-3.5 text-[#89AACC]" />
-                      <span>{isUploading ? 'Subiendo archivo...' : 'Seleccionar archivo local (.jpg, .mov, etc.)'}</span>
-                    </button>
-
-                    <span className="text-xs text-muted">o ingresa URL:</span>
-
-                    <input
-                      type="url"
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      placeholder="https://images.unsplash.com/..."
-                      className="flex-1 w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
-                    />
-
-                    <button
-                      type="submit"
-                      disabled={!newImageUrl || !newTitle.trim()}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-xs font-medium text-white accent-gradient disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>Publicar en Laboratorio</span>
-                    </button>
-                  </div>
-
-                  {/* Preview if image selected */}
-                  {newImageUrl && (
-                    <div className="flex items-center gap-3 p-2 bg-surface rounded-xl border border-stroke/70">
-                      <img
-                        src={newImageUrl}
-                        alt="Vista previa"
-                        className="w-12 h-12 rounded-lg object-cover border border-stroke"
-                      />
-                      <span className="text-xs text-text-primary truncate">{newTitle || 'Imagen cargada con éxito'}</span>
-                    </div>
-                  )}
-                </form>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Filter Pills */}
-          <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-stroke/40 bg-surface/50 overflow-x-auto text-xs">
+          {/* Filter Pills (Pinned under header) */}
+          <div className="flex items-center justify-between px-5 sm:px-6 py-3 border-b border-stroke/40 bg-surface/80 backdrop-blur-md overflow-x-auto text-xs shrink-0">
             <div className="flex items-center gap-2">
               <Filter className="w-3.5 h-3.5 text-muted shrink-0 mr-1" />
               {categories.map((cat) => {
@@ -460,14 +317,170 @@ export const ExplorationsGalleryModal: React.FC<ExplorationsGalleryModalProps> =
             </div>
 
             {saveSuccess && (
-              <span className="text-xs text-emerald-400 flex items-center gap-1 shrink-0 ml-4 animate-fade-in">
+              <span className="text-xs text-emerald-400 flex items-center gap-1 shrink-0 ml-4 animate-fade-in font-medium">
                 <Check className="w-3.5 h-3.5" /> Guardado
               </span>
             )}
           </div>
 
-          {/* Gallery Grid */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
+          {/* Scrollable Modal Body: Contains the Add Exploration Form (when open) and the Gallery Grid */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 md:p-8 space-y-6 overscroll-contain scrollbar-thin scrollbar-thumb-[#89AACC]/40 hover:scrollbar-thumb-[#89AACC]/70 scrollbar-track-black/40">
+            {/* Admin Upload / Add Exploration Form inside scroll body so user can smoothly scroll to all inputs and the submit button */}
+            <AnimatePresence>
+              {isAdmin && showAddForm && (
+                <motion.div
+                  id="add-photo-section"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="rounded-2xl border-2 border-[#89AACC]/50 bg-bg p-5 sm:p-6 shadow-2xl space-y-4"
+                >
+                  <form onSubmit={handleAddExploration} className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-stroke pb-3">
+                      <span className="text-sm font-semibold text-[#89AACC] uppercase tracking-wider flex items-center gap-2">
+                        <Camera className="w-4 h-4" />
+                        Agregar Nueva Foto al Laboratorio Visual
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAddForm(false)}
+                        className="text-xs text-muted hover:text-white px-2.5 py-1 rounded-lg border border-stroke hover:bg-white/10 transition-colors cursor-pointer"
+                      >
+                        Cerrar Formulario ×
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] text-muted uppercase tracking-wider mb-1 font-medium">
+                          Título de la foto *
+                        </label>
+                        <input
+                          type="text"
+                          value={newTitle}
+                          onChange={(e) => setNewTitle(e.target.value)}
+                          placeholder="Ej. Boceto Bólido GT 2026..."
+                          className="w-full bg-surface border border-stroke rounded-xl px-3.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] text-muted uppercase tracking-wider mb-1 font-medium">
+                          Técnica / Medio
+                        </label>
+                        <input
+                          type="text"
+                          value={newMedium}
+                          onChange={(e) => setNewMedium(e.target.value)}
+                          placeholder="Ej. Render 3D & Fotografía..."
+                          className="w-full bg-surface border border-stroke rounded-xl px-3.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] text-muted uppercase tracking-wider mb-1 font-medium">
+                            Categoría
+                          </label>
+                          <select
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            className="w-full bg-surface border border-stroke rounded-xl px-2.5 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                          >
+                            <option value="Automotriz">Automotriz</option>
+                            <option value="Fotografía & Viajes">Fotografía &amp; Viajes</option>
+                            <option value="Branding & EAFIT">Branding &amp; EAFIT</option>
+                            <option value="3D & Experimentos">3D &amp; Experimentos</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-muted uppercase tracking-wider mb-1 font-medium">
+                            Año
+                          </label>
+                          <input
+                            type="text"
+                            value={newYear}
+                            onChange={(e) => setNewYear(e.target.value)}
+                            placeholder="2026"
+                            className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-muted uppercase tracking-wider mb-1 font-medium">
+                        Descripción breve
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={newDescription}
+                        onChange={(e) => setNewDescription(e.target.value)}
+                        placeholder="Explica el contexto visual, detalles técnicos o anécdota..."
+                        className="w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC] resize-none"
+                      />
+                    </div>
+
+                    {/* Image source: File upload or URL */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,video/quicktime,video/mp4"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#89AACC]/40 bg-[#89AACC]/15 hover:bg-[#89AACC]/25 text-xs text-white font-medium transition-colors cursor-pointer shrink-0"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-[#89AACC]" />
+                        <span>{isUploading ? 'Subiendo archivo...' : 'Seleccionar archivo local (.jpg, .png, etc.)'}</span>
+                      </button>
+
+                      <span className="text-xs text-muted text-center sm:text-left shrink-0">o ingresa URL:</span>
+
+                      <input
+                        type="url"
+                        value={newImageUrl}
+                        onChange={(e) => setNewImageUrl(e.target.value)}
+                        placeholder="https://images.unsplash.com/..."
+                        className="flex-1 w-full bg-surface border border-stroke rounded-xl px-3 py-2 text-xs text-text-primary focus:outline-none focus:border-[#89AACC]"
+                      />
+
+                      <button
+                        type="submit"
+                        disabled={!newImageUrl || !newTitle.trim()}
+                        className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-semibold text-white accent-gradient disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-md shrink-0"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Publicar en Laboratorio</span>
+                      </button>
+                    </div>
+
+                    {/* Preview if image selected */}
+                    {newImageUrl && (
+                      <div className="flex items-center gap-3 p-3 bg-surface rounded-xl border border-stroke/70">
+                        <img
+                          src={newImageUrl}
+                          alt="Vista previa"
+                          className="w-14 h-14 rounded-lg object-cover border border-stroke shrink-0"
+                        />
+                        <div className="overflow-hidden">
+                          <span className="text-xs text-text-primary font-medium block truncate">
+                            {newTitle || 'Imagen cargada con éxito'}
+                          </span>
+                          <span className="text-[11px] text-emerald-400">✓ Archivo listo para ser publicado</span>
+                        </div>
+                      </div>
+                    )}
+                  </form>
+                </motion.div>
+              )}
+            </AnimatePresence>
             {filteredItems.length === 0 ? (
               <div className="py-20 text-center text-muted text-sm">
                 No hay fotos en esta categoría actualmente.

@@ -15,7 +15,10 @@ import {
   Tag,
   Smartphone,
   Tv,
-  Film
+  Film,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid
 } from 'lucide-react';
 import { Project, ProjectMedia } from '../types';
 import { storeMediaFile } from '../utils/mediaStorage';
@@ -48,6 +51,14 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'media' | 'info' | 'instructions'>('media');
   const [newTagInput, setNewTagInput] = useState<string>('');
+
+  // Material deslizable carrusel state
+  const [materialViewMode, setMaterialViewMode] = useState<'slider' | 'grid'>('slider');
+  const [canScrollMatLeft, setCanScrollMatLeft] = useState(false);
+  const [canScrollMatRight, setCanScrollMatRight] = useState(false);
+  const materialSliderRef = useRef<HTMLDivElement | null>(null);
+  const modalBodyRef = useRef<HTMLDivElement | null>(null);
+  const projectPillsRef = useRef<HTMLDivElement | null>(null);
 
   // Local draft of projects being edited
   const [draftProjects, setDraftProjects] = useState<Project[]>(projects);
@@ -260,6 +271,39 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
     }
   };
 
+  const checkMaterialScrollState = () => {
+    if (!materialSliderRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = materialSliderRef.current;
+    setCanScrollMatLeft(scrollLeft > 10);
+    setCanScrollMatRight(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  const scrollMaterialSlider = (direction: 'left' | 'right') => {
+    if (!materialSliderRef.current) return;
+    const distance = Math.max(280, materialSliderRef.current.clientWidth * 0.7);
+    materialSliderRef.current.scrollBy({
+      left: direction === 'left' ? -distance : distance,
+      behavior: 'smooth',
+    });
+    setTimeout(checkMaterialScrollState, 250);
+  };
+
+  const handleSliderWheel = (e: React.WheelEvent) => {
+    if (!materialSliderRef.current) return;
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      materialSliderRef.current.scrollLeft += e.deltaY;
+      checkMaterialScrollState();
+    }
+  };
+
+  const scrollProjectPills = (direction: 'left' | 'right') => {
+    if (!projectPillsRef.current) return;
+    projectPillsRef.current.scrollBy({
+      left: direction === 'left' ? -180 : 180,
+      behavior: 'smooth',
+    });
+  };
+
   const handleCreateNewProject = () => {
     const newId = `proyecto-eafit-${Date.now()}`;
     const newProj: Project = {
@@ -270,12 +314,17 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
       image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1600&q=80',
       videoFormat: 'reels',
       span: 'col-span-1 md:col-span-7',
+      gallery: [],
     };
 
     const next = [...draftProjects, newProj];
     setDraftProjects(next);
     setSelectedProjectId(newId);
+    setActiveTab('info');
     onSaveProjects(next);
+    setTimeout(() => {
+      modalBodyRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   const handleDeleteProject = (id: string) => {
@@ -293,7 +342,7 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-8 select-none">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -309,7 +358,7 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 20 }}
           transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-          className="relative z-10 w-full max-w-5xl max-h-[92vh] bg-surface border border-stroke rounded-3xl overflow-hidden flex flex-col shadow-2xl"
+          className="relative z-10 w-full max-w-5xl h-[92vh] max-h-[92vh] bg-surface border border-stroke rounded-3xl overflow-hidden flex flex-col shadow-2xl my-auto"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-stroke/70 bg-surface/90 shrink-0">
@@ -325,7 +374,18 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
+              {/* Always visible + Nuevo Proyecto Button in Header */}
+              <button
+                type="button"
+                onClick={handleCreateNewProject}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#89AACC]/40 bg-[#89AACC]/15 hover:bg-[#89AACC]/25 text-[#89AACC] font-semibold text-xs cursor-pointer shadow-sm transition-colors"
+                title="Crear un nuevo proyecto en el portafolio"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Nuevo Proyecto</span>
+              </button>
+
               {saveSuccess && (
                 <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
                   <Check className="w-3.5 h-3.5" />
@@ -353,33 +413,71 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
           </div>
 
           {/* Subheader: Project Selector & Tabs */}
-          <div className="bg-bg/40 border-b border-stroke/70 px-5 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 shrink-0">
-            {/* Project Selector Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto py-1 max-w-full sm:max-w-xl scrollbar-none">
-              <span className="text-xs text-muted font-medium uppercase tracking-wider shrink-0 mr-1">
+          <div className="bg-bg/40 border-b border-stroke/70 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0">
+            {/* Project Selector with Button, Dropdown and Scrollable Pills */}
+            <div className="flex items-center gap-2 overflow-hidden max-w-full sm:max-w-2xl">
+              <span className="text-xs text-muted font-medium uppercase tracking-wider shrink-0 mr-0.5">
                 Proyecto:
               </span>
-              <div className="flex items-center gap-1.5 shrink-0">
-                {draftProjects.map((proj) => (
-                  <button
-                    key={proj.id}
-                    onClick={() => setSelectedProjectId(proj.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer ${
-                      selectedProjectId === proj.id
-                        ? 'bg-[#89AACC] text-bg font-semibold shadow-sm'
-                        : 'bg-surface border border-stroke text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    {proj.title}
-                  </button>
-                ))}
 
+              {/* Direct Add Project Button */}
+              <button
+                onClick={handleCreateNewProject}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#89AACC] text-bg hover:opacity-90 transition-opacity cursor-pointer shadow-sm shrink-0"
+                title="Añadir nuevo proyecto"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nuevo</span>
+              </button>
+
+              {/* Quick Select Dropdown */}
+              <select
+                value={selectedProjectId}
+                onChange={(e) => setSelectedProjectId(e.target.value)}
+                className="bg-surface border border-stroke text-text-primary text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-[#89AACC] cursor-pointer shrink-0 max-w-[130px] sm:max-w-[160px] truncate"
+              >
+                {draftProjects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+
+              {/* Scrollable Pills with Visible Scrollbar & Arrow Buttons */}
+              <div className="flex items-center gap-1 shrink-0 overflow-hidden">
                 <button
-                  onClick={handleCreateNewProject}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-surface/50 border border-dashed border-stroke hover:border-[#89AACC] text-[#89AACC] transition-colors cursor-pointer shrink-0"
+                  type="button"
+                  onClick={() => scrollProjectPills('left')}
+                  className="w-6 h-6 rounded-lg bg-surface border border-stroke flex items-center justify-center text-muted hover:text-white shrink-0 cursor-pointer"
+                  title="Ver proyectos anteriores"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Nuevo Proyecto</span>
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                <div
+                  ref={projectPillsRef}
+                  className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-[#89AACC]/40 max-w-[180px] sm:max-w-xs scroll-smooth"
+                >
+                  {draftProjects.map((proj) => (
+                    <button
+                      key={proj.id}
+                      onClick={() => setSelectedProjectId(proj.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer whitespace-nowrap ${
+                        selectedProjectId === proj.id
+                          ? 'bg-[#89AACC] text-bg font-semibold shadow-sm'
+                          : 'bg-surface border border-stroke text-muted hover:text-text-primary'
+                      }`}
+                    >
+                      {proj.title}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => scrollProjectPills('right')}
+                  className="w-6 h-6 rounded-lg bg-surface border border-stroke flex items-center justify-center text-muted hover:text-white shrink-0 cursor-pointer"
+                  title="Ver siguientes proyectos"
+                >
+                  <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -413,11 +511,33 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
             </div>
           </div>
 
-          {/* Modal Content */}
-          <div className="overflow-y-auto p-5 sm:p-8 flex-1 space-y-6">
+          {/* Modal Content - Rock-Solid Scroll with min-h-0 */}
+          <div
+            ref={modalBodyRef}
+            className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-8 space-y-6 scrollbar-thin scrollbar-thumb-[#89AACC]/40 hover:scrollbar-thumb-[#89AACC]/70 scrollbar-track-black/40"
+          >
             {/* TAB 1: MEDIA UPLOAD (PORTADA + GALERIA CON FORMATOS DE VIDEO) */}
             {activeTab === 'media' && (
               <div className="space-y-6">
+                {/* Project Active Summary Banner */}
+                <div className="p-3.5 rounded-2xl bg-[#89AACC]/10 border border-[#89AACC]/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="w-4 h-4 text-[#89AACC] shrink-0" />
+                    <div>
+                      <span className="font-semibold text-white">Proyecto Activo: {currentProject.title}</span>
+                      <span className="text-muted ml-2">({currentProject.year || '2026'}) • {currentProject.tags?.length || 0} etiquetas</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('info')}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs text-[#89AACC] border border-[#89AACC]/40 bg-[#89AACC]/15 hover:bg-[#89AACC]/25 cursor-pointer transition-colors shrink-0"
+                    title="Editar título, año y etiquetas de este proyecto"
+                  >
+                    <span>Editar Título &amp; Etiquetas →</span>
+                  </button>
+                </div>
+
                 {/* 1. PORTADA PRINCIPAL (FOTO O VIDEO) */}
                 <div className="p-6 rounded-2xl bg-bg/50 border border-stroke space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -556,13 +676,18 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
                   </div>
                 </div>
 
-                {/* 2. GALERÍA ADICIONAL (FOTOS Y VIDEOS) */}
-                <div className="p-6 rounded-2xl bg-bg/50 border border-stroke space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                {/* 2. MATERIAL DEL PROYECTO (FOTOS Y VIDEOS) - CON DESLIZABLE HORIZONTAL */}
+                <div className="p-5 sm:p-6 rounded-2xl bg-bg/50 border border-stroke space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stroke/50 pb-3">
                     <div>
-                      <span className="text-xs uppercase tracking-wider text-emerald-400 font-medium block">
-                        Material del Proyecto (Fotos y Videos)
-                      </span>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs uppercase tracking-wider text-emerald-400 font-semibold block">
+                          Material del Proyecto (Fotos y Videos)
+                        </span>
+                        <span className="text-[11px] text-muted hidden md:inline">
+                          • Carrusel deslizable horizontal
+                        </span>
+                      </div>
                       <h3 className="text-lg font-medium text-text-primary">
                         Archivos Complementarios ({
                           (currentProject.gallery || []).filter(
@@ -571,172 +696,297 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
                         })
                       </h3>
                       <p className="text-xs text-muted">
-                        La portada se administra arriba. Aquí agregas el material complementario (Reels, TikTok, Historias o Fotos con fecha como 2026-1, 2025-2).
+                        Desliza horizontalmente para visualizar todo el material sin límite. Puedes asignar el formato (Reels, TikTok, Historia...) y fecha (ej: 2026-1, 2025-2).
                       </p>
                     </div>
 
-                    <div>
-                      <input
-                        ref={galleryInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,video/quicktime,video/mp4,video/webm,.mov,.mp4,.webm,.jpeg,.jpg,.png"
-                        multiple
-                        className="hidden"
-                        onChange={handleGalleryUpload}
-                      />
-                      <button
-                        onClick={() => galleryInputRef.current?.click()}
-                        disabled={isUploading}
-                        className="flex items-center gap-2 rounded-full px-4 py-2 border border-stroke bg-surface hover:bg-stroke/60 text-text-primary text-xs font-medium cursor-pointer transition-colors shadow-sm"
-                      >
-                        <Plus className="w-3.5 h-3.5 text-[#89AACC]" />
-                        <span>Añadir Fotos / Videos (.MOV / .JPEG)</span>
-                      </button>
+                    <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                      {/* View Switcher (Deslizable vs Cuadrícula) */}
+                      {(() => {
+                        const matCount = (currentProject.gallery || []).filter(
+                          (item) => item.url !== currentProject.videoUrl && item.url !== currentProject.image
+                        ).length;
+                        if (matCount === 0) return null;
+                        return (
+                          <div className="flex items-center bg-surface p-0.5 rounded-xl border border-stroke text-xs">
+                            <button
+                              type="button"
+                              onClick={() => setMaterialViewMode('slider')}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                                materialViewMode === 'slider'
+                                  ? 'bg-[#89AACC] text-bg font-semibold shadow-sm'
+                                  : 'text-muted hover:text-white'
+                              }`}
+                              title="Ver en carrusel deslizable horizontal"
+                            >
+                              <Film className="w-3.5 h-3.5" />
+                              <span>Deslizable</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setMaterialViewMode('grid')}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                                materialViewMode === 'grid'
+                                  ? 'bg-[#89AACC] text-bg font-semibold shadow-sm'
+                                  : 'text-muted hover:text-white'
+                              }`}
+                              title="Ver en cuadrícula completa"
+                            >
+                              <LayoutGrid className="w-3.5 h-3.5" />
+                              <span>Cuadrícula</span>
+                            </button>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Slider Navigation Arrows */}
+                      {materialViewMode === 'slider' && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => scrollMaterialSlider('left')}
+                            disabled={!canScrollMatLeft}
+                            aria-label="Deslizar a la izquierda"
+                            className="w-8 h-8 rounded-xl bg-surface border border-stroke flex items-center justify-center text-text-primary hover:bg-white hover:text-black transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                            title="Deslizar hacia la izquierda"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => scrollMaterialSlider('right')}
+                            disabled={!canScrollMatRight}
+                            aria-label="Deslizar a la derecha"
+                            className="w-8 h-8 rounded-xl bg-surface border border-stroke flex items-center justify-center text-text-primary hover:bg-white hover:text-black transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                            title="Deslizar hacia la derecha"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Upload Button */}
+                      <div>
+                        <input
+                          ref={galleryInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,video/quicktime,video/mp4,video/webm,.mov,.mp4,.webm,.jpeg,.jpg,.png"
+                          multiple
+                          className="hidden"
+                          onChange={handleGalleryUpload}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => galleryInputRef.current?.click()}
+                          disabled={isUploading}
+                          className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 border border-[#89AACC]/40 bg-[#89AACC]/15 hover:bg-[#89AACC]/25 text-white text-xs font-medium cursor-pointer transition-colors shadow-sm"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-[#89AACC]" />
+                          <span>+ Añadir Archivos (.MOV / Foto)</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Gallery Grid with format selection per video */}
+                  {/* Render Material in Deslizable or Grid */}
                   {(() => {
                     const materialList = (currentProject.gallery || []).filter(
                       (item) => item.url !== currentProject.videoUrl && item.url !== currentProject.image
                     );
-                    return materialList.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-2 max-h-[540px] overflow-y-auto p-1 scrollbar-thin">
-                        {materialList.map((item) => (
-                          <div
-                            key={item.id}
-                            className="rounded-2xl overflow-hidden border border-stroke/70 bg-bg/80 flex flex-col"
+
+                    if (materialList.length === 0) {
+                      return (
+                        <div className="p-8 border border-dashed border-stroke rounded-2xl text-center flex flex-col items-center justify-center gap-2.5 bg-surface/30">
+                          <div className="w-10 h-10 rounded-full bg-stroke/50 flex items-center justify-center text-muted">
+                            <ImageIcon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-text-primary">
+                              Aún no has añadido material complementario a este proyecto.
+                            </p>
+                            <p className="text-[11px] text-muted mt-0.5">
+                              Sube videos verticales (Reels, TikTok), fotos o historias que complementen la portada.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => galleryInputRef.current?.click()}
+                            className="mt-1 text-xs text-[#89AACC] hover:underline cursor-pointer font-medium flex items-center gap-1.5"
                           >
-                            {/* Media Preview Box */}
-                            <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
-                              {item.type === 'video' ? (
-                                <div className="w-full h-full relative">
-                                <video
-                                  src={item.url}
-                                  muted
-                                  playsInline
-                                  className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                  <Play className="w-6 h-6 text-white opacity-90" />
-                                </div>
-                              </div>
-                            ) : (
-                              <img
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Haz clic aquí para seleccionar videos o fotos</span>
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    const renderCard = (item: ProjectMedia, inSlider: boolean) => (
+                      <div
+                        key={item.id}
+                        style={inSlider ? { scrollSnapAlign: 'start' } : undefined}
+                        className={`rounded-2xl overflow-hidden border border-stroke/70 bg-surface/90 flex flex-col shadow-md hover:border-[#89AACC]/60 transition-colors ${
+                          inSlider ? 'w-72 sm:w-80 shrink-0' : 'w-full'
+                        }`}
+                      >
+                        {/* Media Preview Box */}
+                        <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+                          {item.type === 'video' ? (
+                            <div className="w-full h-full relative">
+                              <video
                                 src={item.url}
-                                alt={item.name || 'Galería'}
+                                muted
+                                playsInline
                                 className="w-full h-full object-cover"
                               />
-                            )}
-
-                            {/* Badges: Format and Date */}
-                            <div className="absolute top-2 left-2 flex items-center gap-1.5 flex-wrap">
-                              <span className="bg-black/85 text-[10px] text-white px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
-                                {item.type === 'video' ? (
-                                  <Video className="w-3 h-3 text-[#89AACC]" />
-                                ) : (
-                                  <ImageIcon className="w-3 h-3 text-emerald-400" />
-                                )}
-                                <span className="capitalize">{item.type === 'video' ? (item.videoFormat || 'Video') : 'Foto'}</span>
-                              </span>
-
-                              {item.date && (
-                                <span className="bg-black/85 text-[10px] text-[#89AACC] font-mono px-2 py-0.5 rounded-full border border-[#89AACC]/40 font-semibold shadow">
-                                  {item.date}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Delete Action */}
-                            <button
-                              onClick={() => removeGalleryItem(item.id)}
-                              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-600/80 hover:bg-red-600 text-white flex items-center justify-center transition-colors cursor-pointer shadow-md"
-                              title="Eliminar de la galería"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-
-                          {/* Video Format Selector (for Videos) */}
-                          {item.type === 'video' && (
-                            <div className="p-2.5 bg-surface/90 border-t border-stroke/70 space-y-1.5">
-                              <span className="text-[10px] uppercase tracking-wider text-muted font-medium block">
-                                Formato de este video:
-                              </span>
-                              <div className="flex flex-wrap gap-1">
-                                {['reels', 'tiktok', 'historia', 'horizontal', 'cuadrado'].map((fmt) => (
-                                  <button
-                                    key={fmt}
-                                    type="button"
-                                    onClick={() => updateGalleryItemFormat(item.id, fmt)}
-                                    className={`px-2 py-0.5 rounded text-[10px] capitalize font-medium cursor-pointer transition-colors ${
-                                      (item.videoFormat?.toLowerCase() || 'reels') === fmt
-                                        ? 'bg-[#89AACC] text-bg font-semibold'
-                                        : 'bg-bg text-muted hover:text-white border border-stroke/60'
-                                    }`}
-                                  >
-                                    {fmt}
-                                  </button>
-                                ))}
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <Play className="w-6 h-6 text-white opacity-90" />
                               </div>
                             </div>
+                          ) : (
+                            <img
+                              src={item.url}
+                              alt={item.name || 'Galería'}
+                              className="w-full h-full object-cover"
+                            />
                           )}
 
-                          {/* Semester Date Selector (for Photos and Videos) */}
-                          <div className="p-2.5 bg-surface/90 border-t border-stroke/70 space-y-1.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] uppercase tracking-wider text-muted font-medium flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-[#89AACC]" />
-                                <span>Fecha (Semestre):</span>
-                              </span>
-                              <span className="text-[10px] font-mono text-[#89AACC] font-bold bg-black/60 px-2 py-0.5 rounded border border-[#89AACC]/40">
-                                {item.date || currentProject.year || '2026-1'}
-                              </span>
-                            </div>
+                          {/* Badges: Format and Date */}
+                          <div className="absolute top-2 left-2 flex items-center gap-1.5 flex-wrap">
+                            <span className="bg-black/85 text-[10px] text-white px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
+                              {item.type === 'video' ? (
+                                <Video className="w-3 h-3 text-[#89AACC]" />
+                              ) : (
+                                <ImageIcon className="w-3 h-3 text-emerald-400" />
+                              )}
+                              <span className="capitalize">{item.type === 'video' ? (item.videoFormat || 'Video') : 'Foto'}</span>
+                            </span>
 
+                            {item.date && (
+                              <span className="bg-black/85 text-[10px] text-[#89AACC] font-mono px-2 py-0.5 rounded-full border border-[#89AACC]/40 font-semibold shadow">
+                                {item.date}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Delete Action */}
+                          <button
+                            type="button"
+                            onClick={() => removeGalleryItem(item.id)}
+                            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-600/85 hover:bg-red-600 text-white flex items-center justify-center transition-colors cursor-pointer shadow-md"
+                            title="Eliminar de la galería"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Video Format Selector (for Videos) */}
+                        {item.type === 'video' && (
+                          <div className="p-2.5 bg-surface border-t border-stroke/70 space-y-1.5">
+                            <span className="text-[10px] uppercase tracking-wider text-muted font-medium block">
+                              Formato de este video:
+                            </span>
                             <div className="flex flex-wrap gap-1">
-                              {['2026-1', '2026-2', '2025-1', '2025-2', '2024-1', '2024-2'].map((sem) => (
+                              {['reels', 'tiktok', 'historia', 'horizontal', 'cuadrado'].map((fmt) => (
                                 <button
-                                  key={sem}
+                                  key={fmt}
                                   type="button"
-                                  onClick={() => updateGalleryItemDate(item.id, sem)}
-                                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium cursor-pointer transition-colors ${
-                                    (item.date || '') === sem
-                                      ? 'bg-[#89AACC] text-bg font-bold shadow-sm'
+                                  onClick={() => updateGalleryItemFormat(item.id, fmt)}
+                                  className={`px-2 py-0.5 rounded text-[10px] capitalize font-medium cursor-pointer transition-colors ${
+                                    (item.videoFormat?.toLowerCase() || 'reels') === fmt
+                                      ? 'bg-[#89AACC] text-bg font-semibold'
                                       : 'bg-bg text-muted hover:text-white border border-stroke/60'
                                   }`}
                                 >
-                                  {sem}
+                                  {fmt}
                                 </button>
                               ))}
                             </div>
-
-                            <input
-                              type="text"
-                              value={item.date || ''}
-                              onChange={(e) => updateGalleryItemDate(item.id, e.target.value)}
-                              placeholder="O escribe: 2026-1, 2025-2..."
-                              className="w-full bg-bg border border-stroke rounded px-2.5 py-1 text-[11px] text-text-primary font-mono focus:outline-none focus:border-[#89AACC]"
-                            />
                           </div>
+                        )}
+
+                        {/* Semester Date Selector (for Photos and Videos) */}
+                        <div className="p-2.5 bg-surface border-t border-stroke/70 space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] uppercase tracking-wider text-muted font-medium flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-[#89AACC]" />
+                              <span>Fecha (Semestre):</span>
+                            </span>
+                            <span className="text-[10px] font-mono text-[#89AACC] font-bold bg-black/60 px-2 py-0.5 rounded border border-[#89AACC]/40">
+                              {item.date || currentProject.year || '2026-1'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1">
+                            {['2026-1', '2026-2', '2025-1', '2025-2', '2024-1', '2024-2'].map((sem) => (
+                              <button
+                                key={sem}
+                                type="button"
+                                onClick={() => updateGalleryItemDate(item.id, sem)}
+                                className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium cursor-pointer transition-colors ${
+                                  (item.date || '') === sem
+                                    ? 'bg-[#89AACC] text-bg font-bold shadow-sm'
+                                    : 'bg-bg text-muted hover:text-white border border-stroke/60'
+                                }`}
+                              >
+                                {sem}
+                              </button>
+                            ))}
+                          </div>
+
+                          <input
+                            type="text"
+                            value={item.date || ''}
+                            onChange={(e) => updateGalleryItemDate(item.id, e.target.value)}
+                            placeholder="O escribe: 2026-1, 2025-2..."
+                            className="w-full bg-bg border border-stroke rounded px-2.5 py-1 text-[11px] text-text-primary font-mono focus:outline-none focus:border-[#89AACC]"
+                          />
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-8 border border-dashed border-stroke rounded-xl text-center flex flex-col items-center justify-center gap-2">
-                      <ImageIcon className="w-8 h-8 text-muted/60" />
-                      <p className="text-xs text-muted">
-                        Aún no has añadido fotos o videos adicionales a este proyecto.
-                      </p>
-                      <button
-                        onClick={() => galleryInputRef.current?.click()}
-                        className="text-xs text-[#89AACC] hover:underline cursor-pointer"
-                      >
-                        Haz clic aquí para seleccionar videos o fotos
-                      </button>
-                    </div>
-                  );
-                })()}
+                      </div>
+                    );
+
+                    return materialViewMode === 'slider' ? (
+                      <div className="relative group">
+                        {/* Left floating arrow overlay */}
+                        {canScrollMatLeft && (
+                          <button
+                            type="button"
+                            onClick={() => scrollMaterialSlider('left')}
+                            className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/90 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-[#89AACC] hover:text-black transition-all shadow-2xl cursor-pointer"
+                            title="Deslizar a la izquierda"
+                          >
+                            <ChevronLeft className="w-5 h-5" />
+                          </button>
+                        )}
+
+                        {/* Right floating arrow overlay */}
+                        {canScrollMatRight && (
+                          <button
+                            type="button"
+                            onClick={() => scrollMaterialSlider('right')}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/90 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-[#89AACC] hover:text-black transition-all shadow-2xl cursor-pointer"
+                            title="Deslizar a la derecha"
+                          >
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
+                        )}
+
+                        {/* Deslizable Horizontal Track */}
+                        <div
+                          ref={materialSliderRef}
+                          onScroll={checkMaterialScrollState}
+                          onWheel={handleSliderWheel}
+                          className="flex items-stretch gap-4 overflow-x-auto pb-4 pt-1 px-1 scroll-smooth select-none scrollbar-thin scrollbar-thumb-[#89AACC]/50 hover:scrollbar-thumb-[#89AACC]/80 scrollbar-track-black/40"
+                          style={{ scrollSnapType: 'x proximity' }}
+                        >
+                          {materialList.map((item) => renderCard(item, true))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-1">
+                        {materialList.map((item) => renderCard(item, false))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}
@@ -854,14 +1104,26 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
                   </div>
                 </div>
 
-                {/* Delete Project Action */}
-                <div className="pt-2 flex justify-end">
+                {/* Actions row: Delete project & Continue to Media */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-stroke/60">
                   <button
+                    type="button"
                     onClick={() => handleDeleteProject(currentProject.id)}
-                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 cursor-pointer p-2"
+                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 cursor-pointer p-2 self-start sm:self-center"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Eliminar este proyecto</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSaveProjects(draftProjects);
+                      setActiveTab('media');
+                    }}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-white accent-gradient cursor-pointer hover:opacity-95 shadow-md self-stretch sm:self-auto justify-center"
+                  >
+                    <span>Continuar a Fotos &amp; Videos (Reels / TikTok) →</span>
                   </button>
                 </div>
               </div>

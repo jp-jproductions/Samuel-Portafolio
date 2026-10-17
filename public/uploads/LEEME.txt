@@ -1,0 +1,23 @@
+CARPETA DE FOTOS, VIDEOS (.MOV/.MP4) Y DOCUMENTOS PDF (UNIVERSIDAD EAFIT - SAMUEL RESTREPO)
+========================================================================================
+
+Formatos admitidos:
+- Videos: .MOV (formato iPhone/cámaras profesionales), .MP4, .WEBM
+- Fotos: .JPEG, .JPG, .PNG, .WEBP
+- Documentos: .PDF (planes de mercadeo, investigaciones, informes de proyectos)
+
+1. SUBIDA DIRECTA DESDE LA WEB:
+   - Haz clic en el botón "Subir Fotos / Videos" o "Subir Medios" en la barra superior o en la sección de proyectos.
+   - En la pestaña "Fotos & Videos": Puedes subir portada y galería en .MOV y .JPEG.
+   - En la pestaña "Documentos PDF": Puedes subir informes y entregables académicos en formato .PDF.
+   - Todos los archivos se guardan en IndexedDB dentro del navegador para verse al instante.
+
+2. COLOCANDO ARCHIVOS EN ESTA CARPETA (/public/uploads/):
+   - Puedes colocar archivos estáticos aquí, como:
+     /public/uploads/mi-video-eafit.mov
+     /public/uploads/mi-foto-alta-calidad.jpeg
+     /public/uploads/plan-de-mercadeo.pdf
+   - En la web se acceden directamente con:
+     /uploads/mi-video-eafit.mov
+     /uploads/mi-foto-alta-calidad.jpeg
+     /uploads/plan-de-mercadeo.pdf

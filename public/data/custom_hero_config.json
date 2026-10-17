@@ -1,0 +1,17 @@
+{
+  "eyebrow": "UNIVERSIDAD EAFIT • MEDELLÍN '26",
+  "name": "Samuel Restrepo",
+  "rolesPrefix": "Impulsado por",
+  "roles": [
+    "Creatividad",
+    "Carros",
+    "Mercadeo",
+    "Locura",
+    "Viajar"
+  ],
+  "rolesSuffix": "en la Universidad EAFIT.",
+  "description": "Portafolio de proyectos universitarios en EAFIT.",
+  "primaryButtonText": "Ver Proyectos",
+  "secondaryButtonText": "Contáctame...",
+  "videoUrl": "https://stream.mux.com/Aa02T7oM1wH5Mk5EEVDYhbZ1ChcdhRsS2m1NYyx4Ua1g.m3u8"
+}

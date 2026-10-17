@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+@theme {
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  
+  --color-bg: hsl(var(--bg));
+  --color-surface: hsl(var(--surface));
+  --color-text-primary: hsl(var(--text));
+  --color-muted: hsl(var(--muted));
+  --color-stroke: hsl(var(--stroke));
+}
+
+:root {
+  --bg: 0 0% 4%;
+  --surface: 0 0% 8%;
+  --text: 0 0% 96%;
+  --muted: 0 0% 53%;
+  --stroke: 0 0% 12%;
+  --accent: 0 0% 96%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: hsl(var(--bg));
+  color: hsl(var(--text));
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Explicit fallback utilities ensuring complete compatibility */
+.font-body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.font-display {
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
+.bg-bg {
+  background-color: hsl(var(--bg));
+}
+
+.bg-surface {
+  background-color: hsl(var(--surface));
+}
+
+.text-text-primary {
+  color: hsl(var(--text));
+}
+
+.text-muted {
+  color: hsl(var(--muted));
+}
+
+.border-stroke {
+  border-color: hsl(var(--stroke));
+}
+
+.accent-gradient {
+  background: linear-gradient(90deg, #89AACC 0%, #4E85BF 100%);
+}
+
+.accent-gradient-text {
+  background: linear-gradient(90deg, #89AACC 0%, #4E85BF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.accent-border-gradient {
+  background: linear-gradient(90deg, #89AACC 0%, #4E85BF 100%);
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+.halftone-overlay {
+  background-image: radial-gradient(circle, #000 1px, transparent 1px);
+  background-size: 4px 4px;
+}
+
+@keyframes scroll-down {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(200%);
+    opacity: 0;
+  }
+}
+
+@keyframes role-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-scroll-down {
+  animation: scroll-down 1.5s ease-in-out infinite;
+}
+
+.animate-role-fade-in {
+  animation: role-fade-in 0.4s ease-out forwards;
+}
+
+.animate-gradient-shift {
+  animation: gradient-shift 6s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--bg));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--stroke));
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4E85BF;
+}

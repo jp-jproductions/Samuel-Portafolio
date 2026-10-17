@@ -166,11 +166,12 @@ export const ExplorationsGalleryModal: React.FC<ExplorationsGalleryModalProps> =
   // Delete exploration (admin only)
   const handleDeleteExploration = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('¿Deseas eliminar esta exploración de la galería?')) return;
     const updated = explorations.filter((item) => item.id !== id);
     if (onSaveExplorations) {
       onSaveExplorations(updated);
     }
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
   };
 
   const activeLightboxItem =

@@ -60,6 +60,11 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
   const modalBodyRef = useRef<HTMLDivElement | null>(null);
   const projectPillsRef = useRef<HTMLDivElement | null>(null);
 
+  // In-app deletion and reset modal state (no window.confirm / alert)
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [deleteWarningMessage, setDeleteWarningMessage] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+
   // Local draft of projects being edited
   const [draftProjects, setDraftProjects] = useState<Project[]>(projects);
 
@@ -265,10 +270,15 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
   };
 
   const handleReset = () => {
-    if (window.confirm('¿Seguro que deseas restablecer todos los proyectos a los valores iniciales?')) {
-      onResetProjects();
-      setDraftProjects(projects);
-    }
+    setShowResetConfirm(true);
+  };
+
+  const confirmResetProjects = () => {
+    onResetProjects();
+    setDraftProjects(projects);
+    setShowResetConfirm(false);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
   };
 
   const checkMaterialScrollState = () => {
@@ -327,17 +337,25 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
     }, 100);
   };
 
-  const handleDeleteProject = (id: string) => {
+  const requestDeleteProject = (project: Project) => {
     if (draftProjects.length <= 1) {
-      alert('Debes mantener al menos un proyecto en el portafolio.');
+      setDeleteWarningMessage('Debes mantener al menos un proyecto en el portafolio.');
       return;
     }
-    if (window.confirm('¿Eliminar este proyecto del portafolio?')) {
-      const remaining = draftProjects.filter((p) => p.id !== id);
-      setDraftProjects(remaining);
+    setProjectToDelete(project);
+  };
+
+  const confirmDeleteProject = () => {
+    if (!projectToDelete) return;
+    const remaining = draftProjects.filter((p) => p.id !== projectToDelete.id);
+    setDraftProjects(remaining);
+    if (selectedProjectId === projectToDelete.id && remaining.length > 0) {
       setSelectedProjectId(remaining[0].id);
-      onSaveProjects(remaining);
     }
+    onSaveProjects(remaining);
+    setProjectToDelete(null);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
   };
 
   return (
@@ -422,12 +440,24 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
 
               {/* Direct Add Project Button */}
               <button
+                type="button"
                 onClick={handleCreateNewProject}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#89AACC] text-bg hover:opacity-90 transition-opacity cursor-pointer shadow-sm shrink-0"
                 title="Añadir nuevo proyecto"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nuevo</span>
+              </button>
+
+              {/* Direct Delete Current Project Button */}
+              <button
+                type="button"
+                onClick={() => requestDeleteProject(currentProject)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 transition-colors cursor-pointer shadow-sm shrink-0"
+                title={`Eliminar "${currentProject.title}" del portafolio`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Eliminar</span>
               </button>
 
               {/* Quick Select Dropdown */}
@@ -443,7 +473,7 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
                 ))}
               </select>
 
-              {/* Scrollable Pills with Visible Scrollbar & Arrow Buttons */}
+              {/* Scrollable Pills with Visible Scrollbar, Delete '×', & Arrow Buttons */}
               <div className="flex items-center gap-1 shrink-0 overflow-hidden">
                 <button
                   type="button"
@@ -458,17 +488,39 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
                   className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-thin scrollbar-thumb-[#89AACC]/40 max-w-[180px] sm:max-w-xs scroll-smooth"
                 >
                   {draftProjects.map((proj) => (
-                    <button
+                    <div
                       key={proj.id}
-                      onClick={() => setSelectedProjectId(proj.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 cursor-pointer whitespace-nowrap ${
+                      className={`inline-flex items-center rounded-xl text-xs font-medium transition-all shrink-0 whitespace-nowrap overflow-hidden border ${
                         selectedProjectId === proj.id
-                          ? 'bg-[#89AACC] text-bg font-semibold shadow-sm'
-                          : 'bg-surface border border-stroke text-muted hover:text-text-primary'
+                          ? 'bg-[#89AACC] text-bg font-semibold shadow-sm border-[#89AACC]'
+                          : 'bg-surface border-stroke text-muted hover:text-text-primary'
                       }`}
                     >
-                      {proj.title}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedProjectId(proj.id)}
+                        className="px-2.5 py-1.5 cursor-pointer truncate max-w-[110px]"
+                      >
+                        {proj.title}
+                      </button>
+                      {draftProjects.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            requestDeleteProject(proj);
+                          }}
+                          className={`pr-2 pl-0.5 py-1.5 cursor-pointer transition-colors ${
+                            selectedProjectId === proj.id
+                              ? 'text-bg/70 hover:text-red-950 font-bold'
+                              : 'text-muted/60 hover:text-red-400'
+                          }`}
+                          title={`Eliminar ${proj.title}`}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
                 <button
@@ -528,14 +580,25 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
                       <span className="text-muted ml-2">({currentProject.year || '2026'}) • {currentProject.tags?.length || 0} etiquetas</span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('info')}
-                    className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs text-[#89AACC] border border-[#89AACC]/40 bg-[#89AACC]/15 hover:bg-[#89AACC]/25 cursor-pointer transition-colors shrink-0"
-                    title="Editar título, año y etiquetas de este proyecto"
-                  >
-                    <span>Editar Título &amp; Etiquetas →</span>
-                  </button>
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => requestDeleteProject(currentProject)}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs text-red-400 hover:text-white border border-red-500/30 bg-red-500/10 hover:bg-red-500/25 cursor-pointer transition-colors shrink-0"
+                      title={`Eliminar "${currentProject.title}" del portafolio`}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Eliminar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('info')}
+                      className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs text-[#89AACC] border border-[#89AACC]/40 bg-[#89AACC]/15 hover:bg-[#89AACC]/25 cursor-pointer transition-colors shrink-0"
+                      title="Editar título, año y etiquetas de este proyecto"
+                    >
+                      <span>Editar Título &amp; Etiquetas →</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* 1. PORTADA PRINCIPAL (FOTO O VIDEO) */}
@@ -1108,11 +1171,12 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-stroke/60">
                   <button
                     type="button"
-                    onClick={() => handleDeleteProject(currentProject.id)}
+                    onClick={() => requestDeleteProject(currentProject)}
                     className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 cursor-pointer p-2 self-start sm:self-center"
+                    title={`Eliminar "${currentProject.title}"`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>Eliminar este proyecto</span>
+                    <span>Eliminar este proyecto («{currentProject.title}»)</span>
                   </button>
 
                   <button
@@ -1186,6 +1250,130 @@ export const UploadMediaModal: React.FC<UploadMediaModalProps> = ({
             </div>
           </div>
         </motion.div>
+
+        {/* In-App Confirmation Modal to Delete Project (NO window.confirm) */}
+        {projectToDelete && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              className="w-full max-w-md rounded-3xl bg-surface border-2 border-red-500/50 p-6 shadow-2xl space-y-4 text-center relative z-10"
+            >
+              <div className="w-14 h-14 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center mx-auto shadow-md">
+                <Trash2 className="w-7 h-7" />
+              </div>
+
+              <div>
+                <span className="text-[11px] uppercase tracking-wider text-red-400 font-bold block mb-1">
+                  Confirmar Eliminación
+                </span>
+                <h4 className="text-xl font-display italic text-white">
+                  ¿Eliminar «{projectToDelete.title}»?
+                </h4>
+                <p className="text-xs text-muted mt-2 leading-relaxed">
+                  Esta acción eliminará permanentemente este proyecto del portafolio, incluyendo su portada, videos y todo el material complementario asociado.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-bg/80 border border-stroke text-left text-xs space-y-1">
+                <div className="flex justify-between text-muted">
+                  <span>Año / Fecha:</span>
+                  <span className="text-white font-mono">{projectToDelete.year}</span>
+                </div>
+                <div className="flex justify-between text-muted">
+                  <span>Material asociado:</span>
+                  <span className="text-[#89AACC] font-semibold">
+                    {(projectToDelete.gallery || []).length} archivos
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setProjectToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-stroke text-xs text-text-primary hover:bg-white/10 transition-colors cursor-pointer font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteProject}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-semibold shadow-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Sí, Eliminar Proyecto</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Warning modal if trying to delete the only project */}
+        {deleteWarningMessage && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              className="w-full max-w-sm rounded-3xl bg-surface border border-stroke p-6 shadow-2xl space-y-4 text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-[#89AACC]/15 text-[#89AACC] flex items-center justify-center mx-auto">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Aviso de Portafolio</h4>
+                <p className="text-xs text-muted mt-1.5 leading-relaxed">{deleteWarningMessage}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeleteWarningMessage(null)}
+                className="w-full py-2.5 rounded-xl accent-gradient text-bg text-xs font-semibold cursor-pointer shadow-md"
+              >
+                Entendido
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Reset Confirmation Modal */}
+        {showResetConfirm && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              className="w-full max-w-md rounded-3xl bg-surface border border-stroke p-6 shadow-2xl space-y-4 text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-amber-500/15 text-amber-400 flex items-center justify-center mx-auto">
+                <RefreshCw className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-base font-semibold text-white">¿Restablecer Proyectos?</h4>
+                <p className="text-xs text-muted mt-1 leading-relaxed">
+                  Esto restaurará la lista de proyectos a sus valores iniciales de fábrica.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-stroke text-xs text-text-primary hover:bg-white/10 transition-colors cursor-pointer font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmResetProjects}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-md transition-colors cursor-pointer"
+                >
+                  Restablecer Todo
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     </AnimatePresence>
   );

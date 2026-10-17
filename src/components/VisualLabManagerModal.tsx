@@ -179,10 +179,8 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
 
   // Delete exploration
   const handleDeleteItem = (id: string) => {
-    if (window.confirm('¿Eliminar esta exploración del laboratorio visual?')) {
-      setDraftExplorations((prev) => prev.filter((item) => item.id !== id));
-      if (editingItemId === id) setEditingItemId(null);
-    }
+    setDraftExplorations((prev) => prev.filter((item) => item.id !== id));
+    if (editingItemId === id) setEditingItemId(null);
   };
 
   // Update item in draft
@@ -202,22 +200,16 @@ export const VisualLabManagerModal: React.FC<VisualLabManagerModalProps> = ({
 
   // Reset to original defaults
   const handleResetToDefaults = () => {
-    if (
-      window.confirm(
-        '¿Deseas restaurar todas las fotos y textos del Laboratorio Visual a los valores de fábrica?'
-      )
-    ) {
-      if (onResetAll) {
-        onResetAll();
-      } else {
-        setDraftExplorations(DEFAULT_EXPLORATIONS);
-        setDraftConfig(DEFAULT_VISUAL_LAB_CONFIG);
-        onSaveExplorations(DEFAULT_EXPLORATIONS);
-        onSaveConfig(DEFAULT_VISUAL_LAB_CONFIG);
-      }
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2500);
+    if (onResetAll) {
+      onResetAll();
+    } else {
+      setDraftExplorations(DEFAULT_EXPLORATIONS);
+      setDraftConfig(DEFAULT_VISUAL_LAB_CONFIG);
+      onSaveExplorations(DEFAULT_EXPLORATIONS);
+      onSaveConfig(DEFAULT_VISUAL_LAB_CONFIG);
     }
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2500);
   };
 
   // Filtered list for display
